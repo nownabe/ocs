@@ -22,7 +22,22 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Direct
+```ruby
+require "ocs"
+
+clinet = Ocs::Clinet.new(
+  host: "your-cloudstack.host",
+  api_key: YOUR_API_KEY,
+  secret_key: YOUR_SECRET_KEY
+)
+
+response = client.call("listVirtualMachines")
+p response.body
+
+response = client.call("listTemplates", templatefilter: "featured")
+p response.body
+```
 
 ## Development
 
