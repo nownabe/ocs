@@ -14,11 +14,8 @@ module Ocs
     end
 
     def call(name, options = {})
-      Request.new(
-        name: name,
-        options: options,
-        client: self
-      ).call
+      send(name, options)
+        .body["#{name.downcase.pluralize}response"]
     end
 
     def connection
@@ -31,6 +28,14 @@ module Ocs
 
     def new(resource_name, options)
       resource_class(resource_name).new(client, options)
+    end
+
+    def send(name, options = {})
+      Request.new(
+        name: name,
+        options: options,
+        client: self
+      ).send
     end
 
     private

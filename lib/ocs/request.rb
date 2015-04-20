@@ -8,7 +8,7 @@ module Ocs
       @client  = client
     end
 
-    def call
+    def send
       Response.new(connection.get(path, escaped_parameters, headers))
     end
 
