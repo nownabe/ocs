@@ -1,15 +1,12 @@
-require "faraday"
-
 module Ocs
   class Client
-    attr_reader :api_key, :host, :path, :secret_key
+    attr_reader :api_key, :host, :path, :secret_key, :logger
 
-    def initialize(host:, api_key:, secret_key:, path: "/client/api", dry: false, logger: nil)
+    def initialize(host:, api_key:, secret_key:, path: "/client/api", logger: nil)
       @host       = host
       @api_key    = api_key
       @secret_key = secret_key
       @path       = path
-      @dry        = dry
       @logger     = logger
     end
 
@@ -40,12 +37,8 @@ module Ocs
 
     private
 
-    def dry?
-      !!@dry
-    end
-
     def resource_class(resource_name)
-      "resource/#{resource_name}".camelize.constantize
+      "ocs/resources/#{resource_name}".camelize.constantize
     end
 
     def url_prefix
@@ -53,9 +46,9 @@ module Ocs
     end
 
     def method_missing(method, *args)
-      if Resources.const_defined?(args.first.camelize)
-        klass_name, *arguments = args
-        resource_class(klass_name).public_send(method, client, *arguments)
+      if args.first.to_s =~ /^[a-zA-Z]/ && Resources.const_defined?(args.first.to_s.camelize)
+        resource_name, *arguments = args
+        resource_class(resource_name).public_send(method, self, *arguments)
       else
         super
       end
