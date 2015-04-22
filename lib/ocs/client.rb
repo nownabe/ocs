@@ -46,9 +46,7 @@ module Ocs
     end
 
     def method_missing(method, *args)
-      unless args.first.to_s =~ /^[a-zA-Z]/
-        return super
-      end
+      return super unless args.first.to_s =~ /^[a-zA-Z]/
       
       raw_resource_name, *arguments = args
       resource_name = raw_resource_name.to_s.singularize
