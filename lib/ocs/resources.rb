@@ -1,6 +1,5 @@
 module Ocs
   module Resources
-    
     autoload :Account,         "ocs/resources/account"
     autoload :Address,         "ocs/resources/address"
     autoload :AffinityGroup,   "ocs/resources/affinity_group"
@@ -13,6 +12,7 @@ module Ocs
     autoload :Iso,             "ocs/resources/iso"
     autoload :Nic,             "ocs/resources/nic"
     autoload :OsType,          "ocs/resources/os_type"
+    autoload :ResourceDetail,  "ocs/resources/resource_detail"
     autoload :SecurityGroup,   "ocs/resources/security_group"
     autoload :ServiceOffering, "ocs/resources/service_offering"
     autoload :SshKeyPair,      "ocs/resources/ssh_key_pair"

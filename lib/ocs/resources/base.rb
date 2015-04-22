@@ -2,14 +2,17 @@ module Ocs
   module Resources
     class AttributeTypeError < OcsError; end
     class AttributeClassError < OcsError; end
+    class MissingKeyError < OcsError; end
 
     class Base
+      BOOLEAN = [TrueClass, FalseClass].freeze
+
       class_attribute :delegations, instance_writer: false
       self.delegations = {}
 
       class << self
         def all(client)
-          where(client)
+          list(client)
         end
 
         def downcased_name
@@ -24,37 +27,55 @@ module Ocs
           name.pluralize
         end
 
-        def underscore
+        def underscored_name
           name.underscore
         end
 
-        def where(client, conditions = {})
-          client.call("list#{pluralized_name}", conditions)[downcased_name].map do |attributes|
+        def list(client, parameters = {})
+          client.call("list#{pluralized_name}", parameters)[downcased_name].map do |attributes|
             new(client, attributes)
+          end
+        end
+
+        def where(client, conditions = {}, parameters = {})
+          list(client, parameters).select do |instance|
+            conditions.all? do |attribute, condition|
+              value = instance.public_send(attribute)
+              case condition
+              when Regexp
+                condition =~ value
+              when Range
+                condition.include?(value)
+              else
+                condition == value
+              end
+            end
           end
         end
 
         # Dynamic Definitions
 
-        def define_action(action_name, required: [], optional: [])
+        def alias_attribute(new_name, original_name)
+          alias_method new_name, original_name
+          alias_method :"#{new_name}=", :"#{original_name}="
+        end
+
+        def define_action(action_name, required: [], optional: [], api_name: nil)
           define_method(action_name) do
-            call
+            api = api_name || "#{action_name}#{self.class.name}"
+            parameters = action_parameters(required, optional)
+            client.call(api, parameters)
           end
         end
 
-        def define_attribute(attribute_name, type:, &block)
+        def define_attribute(attribute_name, type:)
           define_method(:"#{attribute_name}=") do |value|
             unless [*type].any? { |type| value.is_a?(type) }
               raise AttributeTypeError.new(
                 "#{attribute_name} needs to be a #{[*type].join(" or ")}"
               )
             end
-            set_value = if block
-                block.call(value)
-              else
-                value
-              end
-            instance_variable_set(:"@#{attribute_name}", set_value)
+            instance_variable_set(:"@#{attribute_name}", value)
           end
 
           attr_reader attribute_name
@@ -132,6 +153,29 @@ module Ocs
 
       private
 
+      def action_parameters(required_keys, optional_keys)
+        check_required_keys(required_keys)
+        parameters(required_keys + optional_keys)
+      end
+
+      def check_required_keys(required_keys)
+        required_keys.each do |key|
+          raise MissingKeyError.new("#{key} key is required") if public_send(key).nil?
+        end
+      end
+
+      def parameters(keys)
+        keys.inject({}) do |params, key|
+          value = public_send(key)
+          params[key.to_s.delete("_")] = value if value
+          params
+        end
+      end
+
+      def resource_class(class_name)
+        "ocs/resources/#{class_name}".camelize.constantize
+      end
+
       def update_attributes(hash)
         hash.each do |key, value|
           if delegations.has_key?(key.to_sym)
@@ -140,10 +184,6 @@ module Ocs
             public_send(:"#{key}=", value)
           end
         end
-      end
-
-      def resource_class(class_name)
-        "ocs/resources/#{class_name}".camelize.constantize
       end
     end
   end

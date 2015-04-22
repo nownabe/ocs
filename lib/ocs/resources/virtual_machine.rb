@@ -23,33 +23,32 @@ module Ocs
       define_attribute :cpunumber, type: Integer
       define_attribute :cpuspeed, type: Integer
       define_attribute :cpuused, type: String
-      define_attribute(:created, type: String) { |val| Time.parse(val)}
+      define_attribute :created, type: String
       #define_attribute :details
       #define_attribute :diskioread
       #define_attribute :diskiowrite
       #define_attribute :diskkbsread
       #define_attribute :diskkbswrite
       define_attribute :displayname, type: String
-      define_attribute :displayvm, type: [TrueClass, FalseClass]
+      define_attribute :displayvm, type: BOOLEAN
       #define_attribute :forvirtualnetwork
-      define_attribute :haenable, type: [TrueClass, FalseClass]
+      define_attribute :haenable, type: BOOLEAN
       define_attribute :hypervisor, type: String
       #define_attribute :instancename
-      define_attribute :isdynamicallyscalable, type: [TrueClass, FalseClass]
+      define_attribute :isdynamicallyscalable, type: BOOLEAN
       define_attribute :memory, type: Integer
       define_attribute :name, type: String
       define_attribute :networkkbsread, type: Integer
       define_attribute :networkkbswrite, type: Integer
       #define_attribute :password
-      define_attribute :passwordenabled, type: [TrueClass, FalseClass]
+      define_attribute :passwordenabled, type: BOOLEAN
       define_attribute :rootdeviceid, type: Integer
       define_attribute :rootdevicetype, type: String
       #define_attribute :servicestate
       define_attribute :state, type: String
       #define_attribute :vgpu
 
-
-      delegate_attribute :account, to: :account, as: :id
+      delegate_attribute :account, to: :account, as: :name
       delegate_attribute :diskofferingid,   to: :disk_offering, as: :id
       delegate_attribute :diskofferingname, to: :disk_offering, as: :name
       delegate_attribute :domain,   to: :domain, as: :name
@@ -83,10 +82,9 @@ module Ocs
       delegate_attributes :securitygroup, to: :security_groups
       delegate_attributes :tags, to: :tags
 
-      #define_action :deploy
-      #  required: %i(service_offering_id template_id zone_id),
-      #  optional: %i(displayname group name),
-      #  repeat: false
+      define_action :deploy,
+        required: %i(service_offering_id template_id zone_id),
+        optional: %i(displayname group_name name)
     end
   end
 end

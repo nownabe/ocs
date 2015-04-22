@@ -77,7 +77,7 @@ module Ocs
     def signature_seed
       sorted_parameters =
         escaped_parameters_without_signature.to_a.sort do |a, b|
-          a[0] <=> b[0]
+          a[0].to_s <=> b[0].to_s
         end
       sorted_parameters.map { |param| param.join("=") }.join("&").downcase
     end

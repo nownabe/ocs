@@ -23,8 +23,8 @@ module Ocs
         end
     end
 
-    def new(resource_name, options)
-      resource_class(resource_name).new(client, options)
+    def new(resource_name, options = {})
+      resource_class(resource_name).new(self, options)
     end
 
     def send(name, options = {})
