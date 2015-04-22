@@ -33,10 +33,11 @@ clinet = Ocs::Clinet.new(
 )
 
 response = client.call("listVirtualMachines")
-p response.body
+p response
+response[:virtualmachine].each { |vm| puts vm[:displayname] }
 
 response = client.call("listTemplates", templatefilter: "featured")
-p response.body
+p response
 ```
 
 ## Development
