@@ -46,12 +46,17 @@ module Ocs
     end
 
     def method_missing(method, *args)
-      if args.first.to_s =~ /^[a-zA-Z]/ && Resources.const_defined?(args.first.to_s.camelize)
-        resource_name, *arguments = args
-        resource_class(resource_name).public_send(method, self, *arguments)
-      else
-        super
+      unless args.first.to_s =~ /^[a-zA-Z]/
+        return super
       end
+      
+      raw_resource_name, *arguments = args
+      resource_name = raw_resource_name.to_s.singularize
+      if Resources.const_defined?(resource_name.camelize)
+        return resource_class(resource_name).public_send(method, self, *arguments)
+      end
+
+      super
     end
   end
 end
