@@ -11,8 +11,7 @@ module Ocs
     end
 
     def call(name, options = {})
-      send(name, options)
-        .body["#{name.downcase.pluralize}response"]
+      send(name, options).content
     end
 
     def connection
