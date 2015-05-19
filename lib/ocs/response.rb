@@ -19,5 +19,9 @@ module Ocs
     def status
       @raw_status
     end
+
+    def success?
+      !content.has_key?("cserrorcode")
+    end
   end
 end

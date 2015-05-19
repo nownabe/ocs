@@ -13,6 +13,7 @@ module Ocs
   class OcsError < StandardError; end
 end
 
+require "ocs/api_error"
 require "ocs/client"
 require "ocs/request"
 require "ocs/resources"

@@ -10,6 +10,7 @@ module Ocs
     autoload :Group,           "ocs/resources/group"
     autoload :Host,            "ocs/resources/host"
     autoload :Iso,             "ocs/resources/iso"
+    autoload :Network,         "ocs/resources/network"
     autoload :Nic,             "ocs/resources/nic"
     autoload :OsType,          "ocs/resources/os_type"
     autoload :ResourceDetail,  "ocs/resources/resource_detail"

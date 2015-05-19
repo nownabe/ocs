@@ -19,6 +19,10 @@ module Ocs
           name.downcase
         end
 
+        def inherited(sub_class)
+          sub_class.delegations = {}
+        end
+
         def name
           to_s.split(/::/).last
         end
@@ -32,8 +36,13 @@ module Ocs
         end
 
         def list(client, parameters = {})
-          client.call("list#{pluralized_name}", parameters)[downcased_name].map do |attributes|
-            new(client, attributes)
+          response = client.call("list#{pluralized_name}", parameters)
+          if response.empty?
+            []
+          else
+            response[downcased_name].map do |attributes|
+              new(client, attributes)
+            end
           end
         end
 
@@ -61,10 +70,10 @@ module Ocs
         end
 
         def define_action(action_name, required: [], optional: [], api_name: nil)
-          define_method(action_name) do
+          define_method(action_name) do |special_parameters = {}|
             api = api_name || "#{action_name}#{self.class.name}"
-            parameters = action_parameters(required, optional)
-            client.call(api, parameters)
+            parameters = action_parameters(required, optional).merge(special_parameters)
+            send_and_update(api, parameters)
           end
         end
 
@@ -143,12 +152,20 @@ module Ocs
 
       define_attribute :id, type: String
 
-      attr_reader :client
+      attr_reader :client, :error
 
       def initialize(client, raw_hash = {})
         @client   = client
         @raw_hash = raw_hash
-        update_attributes(raw_hash)
+        update_attributes!(raw_hash)
+      end
+
+      def reload!
+        response = client.call("list#{self.class.pluralized_name}", id: id)[self.class.downcased_name]
+        if response && !response.empty?
+          update_attributes!(response.first)
+        end
+        self
       end
 
       private
@@ -160,14 +177,17 @@ module Ocs
 
       def check_required_keys(required_keys)
         required_keys.each do |key|
+          key = key[:attribute] if key.is_a?(Hash)
           raise MissingKeyError.new("#{key} key is required") if public_send(key).nil?
         end
       end
 
       def parameters(keys)
         keys.inject({}) do |params, key|
-          value = public_send(key)
-          params[key.to_s.delete("_")] = value if value
+          attribute_name = key.is_a?(Hash) ? key[:attribute] : key
+          request_key = key.is_a?(Hash) ? key[:as].to_s : key.to_s.delete("_")
+          value = public_send(attribute_name)
+          params[request_key] = value if value
           params
         end
       end
@@ -176,7 +196,19 @@ module Ocs
         "ocs/resources/#{class_name}".camelize.constantize
       end
 
-      def update_attributes(hash)
+      def send_and_update(api, parameters)
+        response = client.send(api, parameters)
+        if response.success?
+          @error = nil
+          update_attributes!(response.content)
+          true
+        else
+          @error = ApiError.new(api, parameters, response)
+          false
+        end
+      end
+
+      def update_attributes!(hash)
         hash.each do |key, value|
           if delegations.has_key?(key.to_sym)
             public_send(delegations[key.to_sym], value)

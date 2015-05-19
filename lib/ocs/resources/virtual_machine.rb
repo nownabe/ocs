@@ -3,6 +3,7 @@ module Ocs
     class VirtualMachine < Base
       has_one :account
       has_one :address
+      has_one :async_job
       has_one :disk_offering
       has_one :domain
       has_one :group
@@ -34,7 +35,7 @@ module Ocs
       #define_attribute :forvirtualnetwork
       define_attribute :haenable, type: BOOLEAN
       define_attribute :hypervisor, type: String
-      #define_attribute :instancename
+      define_attribute :instancename, type: String
       define_attribute :isdynamicallyscalable, type: BOOLEAN
       define_attribute :memory, type: Integer
       define_attribute :name, type: String
@@ -65,8 +66,8 @@ module Ocs
       delegate_attribute :jobstatus, to: :async_job, as: :jobstatus
       delegate_attribute :keypair, to: :ssh_key_pair, as: :name
       delegate_attribute :ostypeid, to: :os_type, as: :id
-      #delegate_attribute :project,   to: :project, as: :name
-      #delegate_attribute :projectid, to: :project, as: :id
+      delegate_attribute :project,   to: :project, as: :name
+      delegate_attribute :projectid, to: :project, as: :id
       delegate_attribute :publicip,   to: :address, as: :id
       delegate_attribute :publicipid, to: :address, as: :id
       delegate_attribute :serviceofferingid,   to: :service_offering, as: :id
@@ -84,7 +85,38 @@ module Ocs
 
       define_action :deploy,
         required: %i(service_offering_id template_id zone_id),
-        optional: %i(displayname group_name name)
+        optional: %i(displayname name displayvm) + [
+          {attribute: :group_name, as: :group},
+          {attribute: :ssh_key_pair_name, as: :keypair}
+        ]
+
+      def destroyed?
+        state == "Destroyed"
+      end
+
+      def running?
+        state == "Running"
+      end
+
+      def starting?
+        state == "Starting"
+      end
+
+      def stopped?
+        state == "Stopped"
+      end
+
+      def add_nic(network:, ipaddress: nil)
+        network_id = network.is_a?(Resources::Base) ? network.id : network
+        parameters = {networkid: network_id, virtualmachineid: id}
+        parameters[:ipaddress] = ipaddress if ipaddress
+        send_and_update("addNicToVirtualMachine", parameters)
+      end
+
+      def remove_nic(nic:)
+        parameters = {nicid: nic.id, virtualmachineid: id}
+        send_and_update("removeNicFromVirtualMachine", parameters)
+      end
     end
   end
 end

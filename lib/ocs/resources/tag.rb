@@ -10,7 +10,7 @@ module Ocs
       define_attribute :value, type: String
       define_attribute :resourcetype, type: String
 
-      delegate_attribute :acount, to: :account, as: :name
+      delegate_attribute :account, to: :account, as: :name
       delegate_attribute :domain,   to: :domain, as: :name
       delegate_attribute :domainid, to: :domain, as: :id
       delegate_attribute :project,   to: :project, as: :id

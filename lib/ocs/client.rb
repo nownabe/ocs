@@ -1,13 +1,14 @@
 module Ocs
   class Client
-    attr_reader :api_key, :host, :path, :secret_key, :logger
+    attr_reader :api_key, :host, :path, :secret_key, :logger, :ssl
 
-    def initialize(host:, api_key:, secret_key:, path: "/client/api", logger: nil)
+    def initialize(host:, api_key:, secret_key:, path: "/client/api", logger: nil, ssl: true)
       @host       = host
       @api_key    = api_key
       @secret_key = secret_key
       @path       = path
       @logger     = logger
+      @ssl        = ssl
     end
 
     def call(name, options = {})
@@ -41,7 +42,11 @@ module Ocs
     end
 
     def url_prefix
-      "https://#{host}"
+      "#{url_protocol}://#{host}"
+    end
+
+    def url_protocol
+      ssl ? "https" : "http"
     end
 
     def method_missing(method, *args)
