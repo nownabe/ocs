@@ -90,6 +90,8 @@ module Ocs
           {attribute: :ssh_key_pair_name, as: :keypair}
         ]
 
+      define_action :destroy, required: [:id]
+
       def destroyed?
         state == "Destroyed"
       end
