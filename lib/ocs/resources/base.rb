@@ -19,6 +19,10 @@ module Ocs
           name.downcase
         end
 
+        def find(client, conditions = {}, parameters = {})
+          where(client, conditions, parameters).first
+        end
+
         def inherited(sub_class)
           sub_class.delegations = {}
         end
