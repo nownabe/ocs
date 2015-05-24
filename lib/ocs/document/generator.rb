@@ -1,5 +1,6 @@
 require "active_support/core_ext/class/attribute"
 require "active_support/core_ext/string/inflections"
+require "erubis"
 
 module Ocs
   module Document
@@ -45,10 +46,40 @@ module Ocs
           self.class.resources[name] = {}
           require resource
         end
+        output
       end
 
       private
 
+      def output
+        output_resources
+      end
+
+      def output_resources
+        File.write(File.join(self.class.documents_path, "resources.md"), resources_markdown)
+      end
+
+      def render_resource_markdown(name, attributes)
+        p name
+        p attributes
+        ::Erubis::Eruby.new(resource_template).evaluate(name: name, attributes: attributes)
+      end
+
+      def resource_template
+        File.read(File.expand_path("../templates/_resource.md.erb", __FILE__))
+      end
+
+      def resources_contents
+        self.class.resources.map { |name, attributes| render_resource_markdown(name, attributes) }
+      end
+
+      def resources_markdown
+        ::Erubis::Eruby.new(resources_template).evaluate { resources_contents.join("\n") }
+      end
+
+      def resources_template
+        File.read(File.expand_path("../templates/resources.md.erb", __FILE__))
+      end
     end
 
     module Patches

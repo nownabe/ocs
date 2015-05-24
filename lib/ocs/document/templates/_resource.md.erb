@@ -1,0 +1,8 @@
+## <%= @name %>
+### Attributes
+
+Attribute | Type
+---|---
+<%- @attributes.each do |name, contents| %>
+<%= name %> | <%= contents[:type] %>
+<%- end %>
