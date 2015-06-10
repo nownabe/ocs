@@ -10,9 +10,9 @@ require "faraday"
 require "faraday_middleware"
 
 module Ocs
-  class OcsError < StandardError; end
 end
 
+require "ocs/errors"
 require "ocs/api_error"
 require "ocs/client"
 require "ocs/request"

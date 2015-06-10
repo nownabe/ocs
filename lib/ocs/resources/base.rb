@@ -1,9 +1,5 @@
 module Ocs
   module Resources
-    class AttributeTypeError < OcsError; end
-    class AttributeClassError < OcsError; end
-    class MissingKeyError < OcsError; end
-
     class Base
       BOOLEAN = [TrueClass, FalseClass].freeze
 
@@ -11,6 +7,8 @@ module Ocs
       self.delegations = {}
 
       class << self
+        include DynamicDefiners
+
         def all(client)
           list(client)
         end
@@ -65,98 +63,11 @@ module Ocs
             end
           end
         end
-
-        # Dynamic Definitions
-
-        def alias_attribute(new_name, original_name)
-          alias_method new_name, original_name
-          alias_method :"#{new_name}=", :"#{original_name}="
-        end
-
-        def define_action(action_name, required: [], optional: [], api_name: nil)
-          define_method(action_name) do |special_parameters = {}|
-            api = api_name || "#{action_name}#{self.class.name}"
-            parameters = action_parameters(required, optional).merge(special_parameters)
-            send_and_update(api, parameters)
-          end
-        end
-
-        def define_attribute(attribute_name, type:)
-          define_method(:"#{attribute_name}=") do |value|
-            unless [*type].any? { |type| value.is_a?(type) }
-              raise AttributeTypeError.new(
-                "#{attribute_name} needs to be a #{[*type].join(" or ")}"
-              )
-            end
-            instance_variable_set(:"@#{attribute_name}", value)
-          end
-
-          attr_reader attribute_name
-        end
-
-        def delegate_attribute(attribute_name, to:, as:)
-          writer_method_name = :"#{to}_#{as}="
-          define_method(writer_method_name) do |value|
-            instance =
-              public_send(to) ||
-              public_send(:"#{to}=", resource_class(to).new(client))
-            instance.public_send(:"#{as}=", value)
-          end
-          delegations[attribute_name] = writer_method_name
-
-          define_method(:"#{to}_#{as}") do
-            instance = public_send(to)
-            instance && instance.public_send(as)
-          end
-        end
-
-        def delegate_attributes(attribute_name, to:)
-          delegations[attribute_name] = :"#{to}="
-        end
-
-        def has_one(attribute_name)
-          define_method(:"#{attribute_name}=") do |value|
-            klass = resource_class(attribute_name)
-            unless value.instance_of?(klass)
-              raise AttributeClassError.new(
-                "#{attribute_name} needs to be an instance of #{klass}"
-              )
-            end
-            instance_variable_set(:"@#{attribute_name}", value)
-          end
-
-          attr_reader attribute_name
-        end
-
-        def has_many(attribute_name)
-          define_method(:"#{attribute_name}=") do |values|
-            unless values.is_a?(Array)
-              raise AttributeTypeError.new("#{attribute_name} needs to be a Array")
-            end
-
-            klass = resource_class(attribute_name.to_s.singularize)
-            instances = values.map do |value|
-              case value
-              when klass
-                value
-              when Hash
-                klass.new(client, value)
-              else
-                raise AttributeClassError.new(
-                  "elements of #{attribute_name} need to be instances of #{klass}"
-                )
-              end
-            end
-            instance_variable_set(:"@#{attribute_name}", instances)
-          end
-
-          attr_reader attribute_name
-        end
       end
 
-      define_attribute :id, type: String
-
       attr_reader :client, :error
+
+      define_attribute :id, type: String
 
       def initialize(client, raw_hash = {})
         @client   = client
@@ -205,7 +116,7 @@ module Ocs
         if response.success?
           @error = nil
           update_attributes!(response.content)
-          true
+          self
         else
           @error = ApiError.new(api, parameters, response)
           false
