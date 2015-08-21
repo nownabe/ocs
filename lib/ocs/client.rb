@@ -54,7 +54,7 @@ module Ocs
       
       raw_resource_name, *arguments = args
       resource_name = raw_resource_name.to_s.singularize
-      if Resources.const_defined?(resource_name.camelize)
+      if Ocs::Resources.const_defined?(resource_name.camelize)
         return resource_class(resource_name).public_send(method, self, *arguments)
       end
 
