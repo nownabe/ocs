@@ -47,6 +47,7 @@ module Ocs
       define_attribute :rootdevicetype, type: String
       #define_attribute :servicestate
       define_attribute :state, type: String
+      define_attribute :userdata, type: String
       #define_attribute :vgpu
 
       delegate_attribute :account, to: :account, as: :name
@@ -85,7 +86,7 @@ module Ocs
 
       define_action :deploy,
         required: %i(service_offering_id template_id zone_id),
-        optional: %i(displayname name displayvm) + [
+        optional: %i(displayname name displayvm userdata) + [
           {attribute: :group_name, as: :group},
           {attribute: :ssh_key_pair_name, as: :keypair}
         ]
@@ -118,6 +119,14 @@ module Ocs
       def remove_nic(nic:)
         parameters = {nicid: nic.id, virtualmachineid: id}
         send_and_update("removeNicFromVirtualMachine", parameters)
+      end
+
+      attr_reader :raw_userdata
+
+      def raw_userdata=(raw_userdata)
+        @raw_userdata = raw_userdata
+        raw_userdata << "\n" until raw_userdata.bytesize % 3 == 0
+        self.userdata = Base64.strict_encode64(raw_userdata)
       end
     end
   end

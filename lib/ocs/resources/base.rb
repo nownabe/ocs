@@ -1,14 +1,14 @@
 module Ocs
   module Resources
     class Base
+      include DynamicDefiners
+
       BOOLEAN = [TrueClass, FalseClass].freeze
 
       class_attribute :delegations, instance_writer: false
       self.delegations = {}
 
       class << self
-        include DynamicDefiners
-
         def all(client)
           list(client)
         end
@@ -84,28 +84,6 @@ module Ocs
       end
 
       private
-
-      def action_parameters(required_keys, optional_keys)
-        check_required_keys(required_keys)
-        parameters(required_keys + optional_keys)
-      end
-
-      def check_required_keys(required_keys)
-        required_keys.each do |key|
-          key = key[:attribute] if key.is_a?(Hash)
-          raise MissingKeyError.new("#{key} key is required") if public_send(key).nil?
-        end
-      end
-
-      def parameters(keys)
-        keys.inject({}) do |params, key|
-          attribute_name = key.is_a?(Hash) ? key[:attribute] : key
-          request_key = key.is_a?(Hash) ? key[:as].to_s : key.to_s.delete("_")
-          value = public_send(attribute_name)
-          params[request_key] = value if value
-          params
-        end
-      end
 
       def resource_class(class_name)
         "ocs/resources/#{class_name}".camelize.constantize

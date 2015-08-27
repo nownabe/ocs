@@ -21,7 +21,7 @@ module Ocs
     end
 
     def success?
-      !content.has_key?("cserrorcode")
+      !content.has_key?("errorcode")
     end
   end
 end
