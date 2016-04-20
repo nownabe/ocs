@@ -86,7 +86,7 @@ module Ocs
 
       define_action :deploy,
         required: %i(service_offering_id template_id zone_id),
-        optional: %i(displayname name displayvm userdata) + [
+        optional: %i(displayname name displayvm userdata host_id) + [
           {attribute: :group_name, as: :group},
           {attribute: :ssh_key_pair_name, as: :keypair}
         ]
